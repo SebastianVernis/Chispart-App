@@ -181,7 +181,12 @@ async def startup_event():
     """Inicializar el orquestador al iniciar la aplicación"""
     global orchestrator
     try:
-        config_file = os.getenv("CONFIG_FILE", "blackbox_hybrid_tool/config/models.json")
+        # Check for config in new location first, fallback to old location for compatibility
+        config_file = os.getenv("CONFIG_FILE")
+        if not config_file or not os.path.exists(config_file):
+            config_file = os.getenv("CONFIG_FILE", os.path.join("config", "models.json"))
+            if not os.path.exists(config_file):
+                config_file = os.path.join("blackbox_hybrid_tool", "config", "models.json")
         orchestrator = AIOrchestrator(config_file)
         # Asegurar snapshot embebido si está habilitado
         if os.getenv("AUTO_SNAPSHOT", "true").lower() in ("1", "true", "yes"):

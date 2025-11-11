@@ -12,7 +12,7 @@ class AppSettings(BaseSettings):
     jwt_secret_key: str = Field("supersecretkey", env="CHISPART_JWT_SECRET")
     rate_limit_requests: int = Field(100, env="CHISPART_RATE_LIMIT")
     redis_url: Optional[str] = Field(None, env="CHISPART_REDIS_URL")
-    models_config_path: str = Field("blackbox_hybrid_tool/config/models.json", env="CHISPART_MODELS_CONFIG")
+    models_config_path: str = Field("config/models.json", env="CHISPART_MODELS_CONFIG")
 
     class Config:
         env_file = ".env"

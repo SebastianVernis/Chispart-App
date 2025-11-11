@@ -27,6 +27,9 @@ The project has been enhanced with several key improvements:
 ```
 blackbox-hybrid-tool/
 ├── main.py                    # Main FastAPI server
+├── assets/                    # Multimedia assets (images, videos)
+│   └── images/                # Project images
+├── backups/                   # Backup files
 ├── blackbox_hybrid_tool/      # Main Python package
 │   ├── cli/                   # Command-line interface
 │   │   ├── main.py            # Main CLI entry point
@@ -34,8 +37,8 @@ blackbox-hybrid-tool/
 │   ├── core/                  # Core functionality
 │   │   ├── ai_client.py       # AI client and orchestrator
 │   │   └── test_generator.py  # Automated test generation
-│   ├── config/                # Configuration files
-│   │   └── models.json        # AI model configuration
+│   ├── config/                # Package configuration
+│   │   └── models.json        # AI model configuration (symbolic link to central config)
 │   └── utils/                 # Utility modules
 │       ├── patcher.py         # Unified diff patch applier
 │       ├── self_repo.py       # Self-repo analysis and management
@@ -44,18 +47,29 @@ blackbox-hybrid-tool/
 │       ├── ssh.py             # SSH utilities
 │       ├── profiles.py        # Media profile management
 │       └── image.py           # Image processing utilities
-├── tests/                     # Test files
+├── config/                    # Main project configuration
+│   └── models.json            # AI model configuration
+├── docs/                      # Project documentation
+│   ├── AGENTS.md              # Agent documentation
+│   ├── BRANDING.md            # Branding guide
+│   └── deployment.md          # Deployment guide
+├── frontend/                  # Frontend files
+│   └── index.html             # Main frontend page
+├── multi_agent_workflow/      # Multi-agent workflow components
+├── scripts/                   # Executable scripts
 ├── static/                    # Static files (playground UI)
-├── frontend/                  # Frontend files (main UI)
+├── tests/                     # Test files
 ├── Dockerfile                 # Docker configuration
 ├── docker-compose.yml         # Docker Compose configuration
+├── LICENSE                    # License information
+├── README.md                  # Main documentation
 ├── requirements.txt           # Python dependencies
+├── requirements-dev.txt       # Development dependencies
 ├── setup.py                   # Package setup
 ├── pyproject.toml             # Project configuration
 ├── .dockerignore             # Docker ignore patterns
 ├── .env.example              # Example environment variables
-├── README.md                 # Project documentation
-└── LICENSE                   # License information
+└── MANIFEST.in               # Files included in distribution
 ```
 
 ## Key Components

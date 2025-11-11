@@ -140,10 +140,24 @@ class AIOrchestrator:
     """Orquestador principal para manejar múltiples modelos AI"""
 
     def __init__(self, config_file: Optional[str] = None):
-        # Determinar ruta de configuración: ENV -> default del paquete
-        self.config_file = config_file or os.getenv(
-            "CONFIG_FILE", "blackbox_hybrid_tool/config/models.json"
-        )
+        # Determinar ruta de configuración: ENV -> new default -> old default for compatibility
+        env_config = os.getenv("CONFIG_FILE")
+        if config_file:
+            self.config_file = config_file
+        elif env_config and os.path.exists(env_config):
+            self.config_file = env_config
+        elif env_config:
+            # If env var is set but file doesn't exist, check new default location
+            self.config_file = os.path.join("config", "models.json")
+            if not os.path.exists(self.config_file):
+                # If new default doesn't exist, fall back to old default for compatibility
+                self.config_file = os.path.join("blackbox_hybrid_tool", "config", "models.json")
+        else:
+            # Check new default location first
+            self.config_file = os.path.join("config", "models.json")
+            if not os.path.exists(self.config_file):
+                # If new default doesn't exist, fall back to old default for compatibility
+                self.config_file = os.path.join("blackbox_hybrid_tool", "config", "models.json")
         self.models_config = self._load_config()
         # Configurar el mejor modelo disponible al iniciar
         try:

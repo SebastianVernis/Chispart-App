@@ -32,8 +32,8 @@ Plataforma de IA multiagente para creación de contenido, con interfaz glassmorp
    Crea un archivo `.env` con al menos la clave de Blackbox y, opcionalmente, rutas de configuración:
    ```env
    BLACKBOX_API_KEY=tu_clave_blackbox
-   # Opcional: ruta al archivo de configuración JSON
-   CONFIG_FILE=blackbox_hybrid_tool/config/models.json
+   # Opcional: ruta al archivo de configuración JSON (por defecto: config/models.json)
+   CONFIG_FILE=config/models.json
    # Opcional: CSV con catálogo de modelos (ver sección Importación CSV)
    BLACKBOX_MODELS_CSV=/ruta/a/modelos_blackbox.csv
    ```
@@ -264,7 +264,7 @@ docker-compose logs -f | grep "blackbox"
 
 ### Archivo de configuración de modelos
 
-El archivo `blackbox_hybrid_tool/config/models.json` contiene la configuración del modelo Blackbox y, opcionalmente, un catálogo de modelos disponibles. **La API key se debe configurar en la variable de entorno `BLACKBOX_API_KEY`**:
+El archivo `config/models.json` contiene la configuración del modelo Blackbox y, opcionalmente, un catálogo de modelos disponibles. **La API key se debe configurar en la variable de entorno `BLACKBOX_API_KEY`**:
 
 ```json
 {
@@ -324,7 +324,7 @@ Variables de entorno útiles para la CLI/API:
 
 ```bash
 export BLACKBOX_API_KEY='tu_api_key'
-export CONFIG_FILE=blackbox_hybrid_tool/config/models.json
+export CONFIG_FILE=config/models.json
 # Opcionales para búsqueda web
 export SERPAPI_KEY=tu_serpapi_key   # o
 export TAVILY_API_KEY=tu_tavily_key
@@ -556,16 +556,47 @@ La CLI ahora también permite actualizar el identificador por defecto de Blackbo
 ```
 blackbox-hybrid-tool/
 ├── main.py                    # Servidor FastAPI principal
-├── blackbox_hybrid_tool/
-│   ├── core/
-│   │   └── ai_client.py       # Cliente para integración con IA
-│   └── config/
-│       └── models.json        # Configuración de modelos IA
+├── assets/                    # Recursos multimedia (imágenes, videos)
+│   └── images/                # Imágenes del proyecto
+├── backups/                   # Archivos de respaldo
+├── blackbox_hybrid_tool/      # Paquete principal de Python
+│   ├── cli/                   # Interfaz de línea de comandos
+│   │   ├── main.py            # Punto de entrada CLI principal
+│   │   └── media.py           # Comandos de generación de medios
+│   ├── core/                  # Funcionalidad principal
+│   │   ├── ai_client.py       # Cliente y orquestador de IA
+│   │   └── test_generator.py  # Generación automática de tests
+│   ├── config/                # Configuración del paquete
+│   │   └── models.json        # Configuración de modelos IA (enlace simbólico al archivo central)
+│   └── utils/                 # Módulos de utilidad
+│       ├── patcher.py         # Aplicador de parches diff unificados
+│       ├── self_repo.py       # Análisis y gestión del repositorio
+│       ├── github_client.py   # Integración con GitHub
+│       ├── web.py             # Utilidades de búsqueda y obtención web
+│       ├── ssh.py             # Utilidades SSH
+│       ├── profiles.py        # Gestión de perfiles multimedia
+│       └── image.py           # Procesamiento de imágenes
+├── config/                    # Configuración principal del proyecto
+│   └── models.json            # Configuración de modelos IA
+├── docs/                      # Documentación del proyecto
+│   ├── AGENTS.md              # Documentación de agentes
+│   ├── BRANDING.md            # Guía de marca
+│   └── deployment.md          # Guía de despliegue
+├── frontend/                  # Archivos del frontend
+│   └── index.html             # Página principal del frontend
+├── multi_agent_workflow/      # Componentes de trabajo multiagente
+├── scripts/                   # Scripts ejecutables
+├── static/                    # Archivos estáticos (UI de playground)
+├── tests/                     # Archivos de prueba
 ├── Dockerfile                 # Configuración Docker
 ├── docker-compose.yml         # Configuración Docker Compose
-├── requirements.txt           # Dependencias Python
-├── .dockerignore             # Archivos a ignorar en Docker
-└── README.md                 # Esta documentación
+├── LICENSE                    # Licencia del proyecto
+├── README.md                  # Documentación principal
+├── requirements.txt           # Dependencias de Python
+├── requirements-dev.txt       # Dependencias de desarrollo
+├── setup.py                   # Configuración del paquete
+├── pyproject.toml             # Configuración del proyecto
+└── MANIFEST.in                # Archivos incluidos en la distribución
 ```
 
 ## 🔧 Desarrollo

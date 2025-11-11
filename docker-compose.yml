@@ -12,7 +12,7 @@ services:
       - ./blackbox_hybrid_tool/config:/app/blackbox_hybrid_tool/config
     environment:
       - LOG_LEVEL=INFO
-      - CONFIG_FILE=blackbox_hybrid_tool/config/models.json
+      - CONFIG_FILE=config/models.json
       - PYTHONPATH=/app
       - APP_NAME=${APP_NAME:-Blackbox Hybrid Tool}
       - APP_TAGLINE=${APP_TAGLINE:-API para herramienta híbrida de modelos AI}
@@ -39,7 +39,7 @@ services:
       - ./blackbox_hybrid_tool/config:/app/blackbox_hybrid_tool/config
     environment:
       - LOG_LEVEL=DEBUG
-      - CONFIG_FILE=blackbox_hybrid_tool/config/models.json
+      - CONFIG_FILE=config/models.json
       - PYTHONPATH=/app
       - APP_NAME=${APP_NAME:-Blackbox Hybrid Tool}
       - APP_TAGLINE=${APP_TAGLINE:-API para herramienta híbrida de modelos AI}
