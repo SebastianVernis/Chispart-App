@@ -553,7 +553,6 @@ La CLI ahora también permite actualizar el identificador por defecto de Blackbo
 
 ## 📁 Estructura del proyecto
 
-```
 blackbox-hybrid-tool/
 ├── main.py                    # Servidor FastAPI principal
 ├── assets/                    # Recursos multimedia (imágenes, videos)
