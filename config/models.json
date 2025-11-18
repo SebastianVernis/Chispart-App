@@ -6,5 +6,13 @@
       "enabled": true,
       "base_url": "https://api.blackbox.ai/chat/completions"
     }
-  }
+  },
+  "available_models": [
+    {
+      "model": "blackboxai/openai/o1",
+      "context": "128k",
+      "input_cost": "5.00",
+      "output_cost": "15.00"
+    }
+  ]
 }
