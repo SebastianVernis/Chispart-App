@@ -476,7 +476,7 @@ async def playground():
         <div class="input-group">
           <label for="model">Modelo (opcional)</label>
           <input id="model" class="form-control" type="text" 
-                 placeholder="blackboxai/openai/o1, blackboxai/anthropic/claude-3.5-sonnet" />
+                 placeholder="blackboxai/openai/o1 (default)" />
         </div>
         
         <div class="input-group">
@@ -907,7 +907,9 @@ Respuesta:"""
         # Manejar diferentes tipos de intención
         if "CODIGO" in intent:
             # Para consultas de código, usar un modelo especializado en programación
-            code_model = request.model_type or "blackboxai/anthropic/claude-3.5-sonnet"
+            # Obtener el modelo configurado en lugar de usar uno hardcoded
+            default_model = orchestrator.models_config.get("models", {}).get("blackbox", {}).get("model", "blackboxai/openai/o1")
+            code_model = request.model_type or default_model
             
             # Mejorar el prompt para consultas de código
             enhanced_prompt = f"""Como experto en programación, ayuda con esta consulta relacionada con código:
@@ -1123,7 +1125,9 @@ Por favor proporciona una respuesta detallada, clara y con ejemplos cuando sea a
             )
         else: # TEXTO o fallback
             # Para consultas generales, usar el modelo especificado o el predeterminado
-            text_model = request.model_type or "blackboxai/anthropic/claude-3.5-sonnet"
+            # Obtener el modelo configurado en lugar de usar uno hardcoded
+            default_model = orchestrator.models_config.get("models", {}).get("blackbox", {}).get("model", "blackboxai/openai/o1")
+            text_model = request.model_type or default_model
             
             response_data = orchestrator.generate_response(
                 prompt=request.prompt,
