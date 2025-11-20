@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/frontend/(.*)",
+      "dest": "/frontend/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/playground",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/fileexplorer",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/health",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/models",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/chat",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/tools",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/files",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/",
+      "dest": "/api/index.py"
+    }
+  ],
+  "env": {
+    "BLACKBOX_API_KEY": "@blackbox_api_key",
+    "CONFIG_FILE": "config/models.json",
+    "WRITE_ROOT": "/tmp",
+    "APP_NAME": "Blackbox Hybrid Tool",
+    "APP_TAGLINE": "API para herramienta híbrida de modelos AI",
+    "APP_VERSION": "1.0.0",
+    "AUTO_SNAPSHOT": "false"
+  },
+  "regions": ["iad1"],
+  "functions": {
+    "api/index.py": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
+}
