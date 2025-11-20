@@ -1123,7 +1123,7 @@ Por favor proporciona una respuesta detallada, clara y con ejemplos cuando sea a
             )
         else: # TEXTO o fallback
             # Para consultas generales, usar el modelo especificado o el predeterminado
-            text_model = request.model_type or "blackboxai/anthropic/claude-3.5-sonnet"
+            text_model = request.model_type or "blackboxai/openai/o1"
             
             response_data = orchestrator.generate_response(
                 prompt=request.prompt,
