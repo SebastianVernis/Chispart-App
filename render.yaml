@@ -1,0 +1,31 @@
+services:
+  # Chispart AI - FastAPI Backend
+  - type: web
+    name: chispart-ai
+    runtime: python
+    env: python
+    region: oregon
+    plan: free
+    branch: master
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PYTHONUNBUFFERED
+        value: true
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CONFIG_FILE
+        value: config/models.json
+      - key: APP_NAME
+        value: Chispart AI
+      - key: APP_TAGLINE
+        value: Plataforma de IA multiagente
+      - key: APP_VERSION
+        value: 1.0.0
+      - key: BLACKBOX_API_KEY
+        sync: false  # Set in Render dashboard
