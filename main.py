@@ -1125,9 +1125,7 @@ Por favor proporciona una respuesta detallada, clara y con ejemplos cuando sea a
             )
         else: # TEXTO o fallback
             # Para consultas generales, usar el modelo especificado o el predeterminado
-            # Obtener el modelo configurado en lugar de usar uno hardcoded
-            default_model = orchestrator.models_config.get("models", {}).get("blackbox", {}).get("model", "blackboxai/openai/o1")
-            text_model = request.model_type or default_model
+            text_model = request.model_type or "blackboxai/openai/o1"
             
             response_data = orchestrator.generate_response(
                 prompt=request.prompt,
