@@ -21,8 +21,29 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _iter_project_files(root: Path) -> List[Path]:
-    exts = {".py", ".md", ".toml", ".txt", ".json", ".yml", ".yaml", ".html", ".ini", ".cfg"}
-    ignore_dirs = {"__pycache__", ".git", ".venv", "venv", "env", ".self_backup", "htmlcov", "logs", ".pytest_cache"}
+    exts = {
+        ".py",
+        ".md",
+        ".toml",
+        ".txt",
+        ".json",
+        ".yml",
+        ".yaml",
+        ".html",
+        ".ini",
+        ".cfg",
+    }
+    ignore_dirs = {
+        "__pycache__",
+        ".git",
+        ".venv",
+        "venv",
+        "env",
+        ".self_backup",
+        "htmlcov",
+        "logs",
+        ".pytest_cache",
+    }
     files: List[Path] = []
     for p in root.rglob("*"):
         if p.is_dir():
@@ -32,7 +53,11 @@ def _iter_project_files(root: Path) -> List[Path]:
                     pass
                 continue
             continue
-        if p.suffix.lower() in exts or p.name in {"Dockerfile", ".gitignore", "Makefile"}:
+        if p.suffix.lower() in exts or p.name in {
+            "Dockerfile",
+            ".gitignore",
+            "Makefile",
+        }:
             files.append(p)
     return files
 
@@ -73,13 +98,17 @@ def embed_snapshot(root: Optional[Path] = None) -> Path:
     content = (
         "# Auto-generated embedded snapshot. Do not edit manually.\n"
         "EMBEDDED_META = " + repr(meta_json) + "\n"
-        "EMBEDDED_ARCHIVE_BASE64 = (\n" + "\n".join(["    '" + c + "'" for c in chunks]) + "\n)\n"
+        "EMBEDDED_ARCHIVE_BASE64 = (\n"
+        + "\n".join(["    '" + c + "'" for c in chunks])
+        + "\n)\n"
     )
     EMBED_MODULE.write_text(content, encoding="utf-8")
     return EMBED_MODULE
 
 
-def ensure_embedded_snapshot(root: Optional[Path] = None) -> Tuple[bool, Dict[str, object]]:
+def ensure_embedded_snapshot(
+    root: Optional[Path] = None,
+) -> Tuple[bool, Dict[str, object]]:
     """Ensure there's an up-to-date embedded snapshot.
     Returns (changed, meta)
     """
@@ -91,7 +120,9 @@ def ensure_embedded_snapshot(root: Optional[Path] = None) -> Tuple[bool, Dict[st
             # dynamic import without caching
             import importlib.util
 
-            spec = importlib.util.spec_from_file_location("_embedded_payload", EMBED_MODULE)
+            spec = importlib.util.spec_from_file_location(
+                "_embedded_payload", EMBED_MODULE
+            )
             mod = importlib.util.module_from_spec(spec)  # type: ignore
             assert spec and spec.loader
             spec.loader.exec_module(mod)  # type: ignore
@@ -135,14 +166,21 @@ def analyze_dependencies(root: Optional[Path] = None) -> Dict[str, object]:
     pyproject = root / "pyproject.toml"
     deps: List[str] = []
     if req.exists():
-        deps = [line.strip() for line in req.read_text(encoding="utf-8").splitlines() if line.strip() and not line.strip().startswith("#")]
+        deps = [
+            line.strip()
+            for line in req.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
     result["requirements"] = deps
     if pyproject.exists():
         result["pyproject"] = True
     # Static imports scan
     imports: Dict[str, int] = {}
     for p in root.rglob("*.py"):
-        if any(seg in {"__pycache__", ".venv", "venv", ".git", ".self_backup"} for seg in p.parts):
+        if any(
+            seg in {"__pycache__", ".venv", "venv", ".git", ".self_backup"}
+            for seg in p.parts
+        ):
             continue
         try:
             for line in p.read_text(encoding="utf-8").splitlines():
@@ -175,6 +213,7 @@ def backup_current(root: Optional[Path] = None) -> Path:
 def replace_tree(src: Path, dest: Path) -> None:
     """Replace dest tree with src contents (safe-ish)."""
     import shutil
+
     # Copy over files from src to dest
     for p in src.rglob("*"):
         rel = p.relative_to(src)
@@ -184,4 +223,3 @@ def replace_tree(src: Path, dest: Path) -> None:
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(p, target)
-

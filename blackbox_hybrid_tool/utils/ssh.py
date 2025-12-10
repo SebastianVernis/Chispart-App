@@ -7,7 +7,12 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 
-def _ssh_base_args(host: str, user: Optional[str] = None, key_path: Optional[str] = None, port: int = 22) -> List[str]:
+def _ssh_base_args(
+    host: str,
+    user: Optional[str] = None,
+    key_path: Optional[str] = None,
+    port: int = 22,
+) -> List[str]:
     target = f"{user}@{host}" if user else host
     args = ["ssh", "-p", str(port)]
     if key_path:
@@ -33,7 +38,13 @@ def run_ssh_command(
     """
     args = _ssh_base_args(host, user, key_path, port)
     full_cmd = args + [command]
-    proc = subprocess.run(full_cmd, env={**os.environ, **(env or {})}, timeout=timeout, capture_output=True, text=True)
+    proc = subprocess.run(
+        full_cmd,
+        env={**os.environ, **(env or {})},
+        timeout=timeout,
+        capture_output=True,
+        text=True,
+    )
     if proc.stdout:
         print(proc.stdout)
     if proc.stderr:
@@ -107,4 +118,3 @@ def deploy_remote(
             f"nohup python main.py >/tmp/app.out 2>&1 &"
         )
     return run_ssh_command(host, cmd, user=user, key_path=key_path, port=port)
-

@@ -17,9 +17,9 @@ class TestMediaResponseFormatter(unittest.TestCase):
         """Verifica que las URLs de imágenes se formateen correctamente."""
         media_url = "https://example.com/test.jpg"
         media_type = "Image"
-        
+
         response = update_media_response(media_url, media_type)
-        
+
         # Verificar que la respuesta contiene la URL directa
         self.assertIn("https://example.com/test.jpg", response)
         # No debería contener 'Aquí está el enlace:'
@@ -31,9 +31,9 @@ class TestMediaResponseFormatter(unittest.TestCase):
         """Verifica que las URLs de videos se formateen correctamente."""
         media_url = "https://example.com/test.mp4"
         media_type = "Video"
-        
+
         response = update_media_response(media_url, media_type)
-        
+
         # Verificar que la respuesta contiene la URL directa
         self.assertIn("https://example.com/test.mp4", response)
         # No debería contener 'Aquí está el enlace:'
@@ -45,9 +45,9 @@ class TestMediaResponseFormatter(unittest.TestCase):
         """Verifica el manejo de URLs con tipos de archivo desconocidos."""
         media_url = "https://example.com/test.xyz"
         media_type = "Image"
-        
+
         response = update_media_response(media_url, media_type)
-        
+
         # Verificar que la respuesta contiene la URL pero como enlace
         self.assertIn("https://example.com/test.xyz", response)
         self.assertIn("Aquí está el enlace:", response)

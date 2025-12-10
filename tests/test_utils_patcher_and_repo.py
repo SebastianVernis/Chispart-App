@@ -3,7 +3,11 @@ import pytest
 import os
 import io
 
-from blackbox_hybrid_tool.utils.patcher import parse_unified_diff, apply_patch_to_text, apply_unified_diff
+from blackbox_hybrid_tool.utils.patcher import (
+    parse_unified_diff,
+    apply_patch_to_text,
+    apply_unified_diff,
+)
 from blackbox_hybrid_tool.utils import self_repo as sr
 
 
@@ -61,6 +65,7 @@ def test_parse_unified_diff_malformed_header_raises():
     with pytest.raises(ValueError):
         # Force directly the private header parser through a minimal valid block
         from blackbox_hybrid_tool.utils.patcher import _parse_hunk_header
+
         _parse_hunk_header("@@ wrong @@")
 
 

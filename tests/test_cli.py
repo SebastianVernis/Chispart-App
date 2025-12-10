@@ -29,7 +29,11 @@ def cli(cli_module):
     c.ai_orchestrator.models_config = {
         "default_model": "auto",
         "models": {
-            "blackbox": {"enabled": True, "model": "blackboxai/openai/o1", "api_key": None}
+            "blackbox": {
+                "enabled": True,
+                "model": "blackboxai/openai/o1",
+                "api_key": None,
+            }
         },
         "available_models": [
             {"model": "gpt-4o-mini"},
@@ -124,14 +128,20 @@ def test_choose_model_priority(cli, monkeypatch):
 def test_run_write_file_happy_and_conflict(tmp_path, cli, capsys):
     target = tmp_path / "note.txt"
     # happy path
-    args_ok = SimpleNamespace(path=str(target), content="hello", stdin=False, editor=False, overwrite=False)
+    args_ok = SimpleNamespace(
+        path=str(target), content="hello", stdin=False, editor=False, overwrite=False
+    )
     assert cli.run_write_file(args_ok) == 0
     assert target.read_text(encoding="utf-8") == "hello"
     # conflict without overwrite
-    args_conf = SimpleNamespace(path=str(target), content="x", stdin=False, editor=False, overwrite=False)
+    args_conf = SimpleNamespace(
+        path=str(target), content="x", stdin=False, editor=False, overwrite=False
+    )
     assert cli.run_write_file(args_conf) == 1
     # overwrite works
-    args_over = SimpleNamespace(path=str(target), content="world", stdin=False, editor=False, overwrite=True)
+    args_over = SimpleNamespace(
+        path=str(target), content="world", stdin=False, editor=False, overwrite=True
+    )
     assert cli.run_write_file(args_over) == 0
     assert target.read_text(encoding="utf-8") == "world"
 
@@ -146,7 +156,9 @@ def test_run_apply_patch_dry_run(cli, tmp_path, capsys):
 """
     patch_file = tmp_path / "create.patch"
     patch_file.write_text(patch, encoding="utf-8")
-    args = SimpleNamespace(stdin=False, patch_file=str(patch_file), root=str(tmp_path), dry_run=True)
+    args = SimpleNamespace(
+        stdin=False, patch_file=str(patch_file), root=str(tmp_path), dry_run=True
+    )
     rc = cli.run_apply_patch(args)
     assert rc == 0
     out = capsys.readouterr().out
@@ -158,14 +170,25 @@ def test_web_search_and_fetch(cli_module, capsys):
     class FakeWS:
         def __init__(self, engine=None):
             self.engine = engine
+
         def search(self, query, num_results=5):
-            return {"engine": self.engine or "serpapi", "results": [{"title": "t", "link": "u"}]}
+            return {
+                "engine": self.engine or "serpapi",
+                "results": [{"title": "t", "link": "u"}],
+            }
 
     class FakeWF:
         def fetch(self, url):
-            return {"url": url, "status": 200, "content_type": "text/html", "text_stripped": "ok"}
+            return {
+                "url": url,
+                "status": 200,
+                "content_type": "text/html",
+                "text_stripped": "ok",
+            }
 
-    with patch.object(cli_module, "WebSearch", FakeWS), patch.object(cli_module, "WebFetcher", FakeWF):
+    with patch.object(cli_module, "WebSearch", FakeWS), patch.object(
+        cli_module, "WebFetcher", FakeWF
+    ):
         c = cli_module.CLI()
         rc1 = c.run_web_search(SimpleNamespace(query="q", engine=None, num=3))
         rc2 = c.run_web_fetch(SimpleNamespace(url="http://x"))
@@ -178,6 +201,7 @@ def test_github_status_and_gist(cli_module, capsys, monkeypatch):
     class FakeGH:
         def get_user(self):
             return {"login": "me", "id": 1, "name": "Me"}
+
         def create_gist(self, files, description="", public=False):
             return {"html_url": "http://gist"}
 
@@ -186,7 +210,11 @@ def test_github_status_and_gist(cli_module, capsys, monkeypatch):
         rc1 = c.run_gh_status(SimpleNamespace())
         # For gist, provide stdin content through mocking sys.stdin
         monkeypatch.setattr(sys, "stdin", io.StringIO("sample"))
-        rc2 = c.run_gh_create_gist(SimpleNamespace(stdin=True, gist_file=None, name="a.txt", description="", public=False))
+        rc2 = c.run_gh_create_gist(
+            SimpleNamespace(
+                stdin=True, gist_file=None, name="a.txt", description="", public=False
+            )
+        )
         assert rc1 == 0 and rc2 == 0
         out = capsys.readouterr().out
         assert "Gist" in out or "Gist" in out
@@ -194,10 +222,18 @@ def test_github_status_and_gist(cli_module, capsys, monkeypatch):
 
 def test_self_snapshot_extract_analyze(cli_module, capsys):
     # Mock self-repo helpers
-    with patch.object(cli_module, "ensure_embedded_snapshot", return_value=(True, {"file_count": 1, "sha256": "abc"})):
+    with patch.object(
+        cli_module,
+        "ensure_embedded_snapshot",
+        return_value=(True, {"file_count": 1, "sha256": "abc"}),
+    ):
         rc = cli_module.CLI().run_self_snapshot(SimpleNamespace())
         assert rc == 0
-    with patch.object(cli_module, "extract_snapshot", return_value={"path": ".out", "meta": {"file_count": 2}}):
+    with patch.object(
+        cli_module,
+        "extract_snapshot",
+        return_value={"path": ".out", "meta": {"file_count": 2}},
+    ):
         rc = cli_module.CLI().run_self_extract(SimpleNamespace(out=".out"))
         assert rc == 0
     with patch.object(cli_module, "analyze_dependencies", return_value={"ok": True}):

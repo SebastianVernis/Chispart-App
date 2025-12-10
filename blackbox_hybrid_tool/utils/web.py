@@ -24,13 +24,19 @@ class WebFetcher:
         r = requests.get(url, timeout=self.timeout)
         r.raise_for_status()
         content_type = r.headers.get("content-type", "")
-        text = r.text if "text" in content_type or "html" in content_type else r.content.decode("utf-8", errors="ignore")
+        text = (
+            r.text
+            if "text" in content_type or "html" in content_type
+            else r.content.decode("utf-8", errors="ignore")
+        )
         return {
             "url": url,
             "status": r.status_code,
             "content_type": content_type,
             "text": text,
-            "text_stripped": strip_html(text) if "html" in content_type.lower() else text,
+            "text_stripped": strip_html(text)
+            if "html" in content_type.lower()
+            else text,
         }
 
 
@@ -58,26 +64,50 @@ class WebSearch:
                 "api_key": key,
                 "num": num_results,
             }
-            r = requests.get("https://serpapi.com/search", params=params, timeout=self.timeout)
+            r = requests.get(
+                "https://serpapi.com/search", params=params, timeout=self.timeout
+            )
             r.raise_for_status()
             data = r.json()
             out = []
             for item in (data.get("organic_results") or [])[:num_results]:
-                out.append({"title": item.get("title"), "link": item.get("link"), "snippet": item.get("snippet")})
+                out.append(
+                    {
+                        "title": item.get("title"),
+                        "link": item.get("link"),
+                        "snippet": item.get("snippet"),
+                    }
+                )
             return {"engine": "serpapi", "results": out}
 
         if self.engine in ("tavily",):
             key = os.getenv("TAVILY_API_KEY")
             if not key:
                 raise RuntimeError("TAVILY_API_KEY no configurada")
-            payload = {"query": query, "search_depth": "basic", "max_results": num_results}
-            r = requests.post("https://api.tavily.com/search", json=payload, headers={"Authorization": key}, timeout=self.timeout)
+            payload = {
+                "query": query,
+                "search_depth": "basic",
+                "max_results": num_results,
+            }
+            r = requests.post(
+                "https://api.tavily.com/search",
+                json=payload,
+                headers={"Authorization": key},
+                timeout=self.timeout,
+            )
             r.raise_for_status()
             data = r.json()
             out = []
             for item in (data.get("results") or [])[:num_results]:
-                out.append({"title": item.get("title"), "link": item.get("url"), "snippet": item.get("content")})
+                out.append(
+                    {
+                        "title": item.get("title"),
+                        "link": item.get("url"),
+                        "snippet": item.get("content"),
+                    }
+                )
             return {"engine": "tavily", "results": out}
 
-        raise RuntimeError("Motor de búsqueda no configurado. Usa SERPAPI_KEY o TAVILY_API_KEY.")
-
+        raise RuntimeError(
+            "Motor de búsqueda no configurado. Usa SERPAPI_KEY o TAVILY_API_KEY."
+        )

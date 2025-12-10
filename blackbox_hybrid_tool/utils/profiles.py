@@ -8,9 +8,11 @@ from typing import Dict, Any, Optional, List
 PROFILE_DIR = Path.home() / ".config" / "blackbox_hybrid_tool" / "profiles"
 ACTIVE_PROFILE_FILE = PROFILE_DIR / ".active_profile"
 
+
 def ensure_profile_dir():
     """Asegura que el directorio de perfiles exista."""
     PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+
 
 def save_profile(profile_name: str, data: Dict[str, Any]) -> Path:
     """Guarda un perfil en un archivo JSON."""
@@ -20,6 +22,7 @@ def save_profile(profile_name: str, data: Dict[str, Any]) -> Path:
         json.dump(data, f, indent=2)
     return profile_path
 
+
 def load_profile(profile_name: str) -> Optional[Dict[str, Any]]:
     """Carga un perfil desde un archivo JSON."""
     profile_path = PROFILE_DIR / f"{profile_name}.json"
@@ -28,10 +31,12 @@ def load_profile(profile_name: str) -> Optional[Dict[str, Any]]:
             return json.load(f)
     return None
 
+
 def list_profiles() -> List[str]:
     """Lista los nombres de los perfiles disponibles."""
     ensure_profile_dir()
     return [p.stem for p in PROFILE_DIR.glob("*.json")]
+
 
 def set_active_profile(profile_name: str):
     """Establece el perfil activo."""
@@ -41,11 +46,13 @@ def set_active_profile(profile_name: str):
     else:
         raise FileNotFoundError(f"Perfil '{profile_name}' no encontrado.")
 
+
 def get_active_profile_name() -> Optional[str]:
     """Obtiene el nombre del perfil activo."""
     if ACTIVE_PROFILE_FILE.exists():
         return ACTIVE_PROFILE_FILE.read_text(encoding="utf-8").strip()
     return None
+
 
 def get_active_profile() -> Optional[Dict[str, Any]]:
     """Carga el perfil activo."""
@@ -53,6 +60,7 @@ def get_active_profile() -> Optional[Dict[str, Any]]:
     if active_name:
         return load_profile(active_name)
     return None
+
 
 def create_interactive_profile() -> Optional[Dict[str, Any]]:
     """Crea un nuevo perfil de forma interactiva."""
@@ -71,7 +79,9 @@ def create_interactive_profile() -> Optional[Dict[str, Any]]:
         if Path(logo_path_str).exists():
             logo_path = logo_path_str
         else:
-            print(f"Advertencia: El archivo de logo '{logo_path_str}' no fue encontrado.")
+            print(
+                f"Advertencia: El archivo de logo '{logo_path_str}' no fue encontrado."
+            )
 
     brand_focus = input("Enfoque de la marca (ej: moderna, minimalista): ").strip()
 
@@ -84,9 +94,9 @@ def create_interactive_profile() -> Optional[Dict[str, Any]]:
 
     save_profile(profile_name, profile_data)
     print(f"✅ Perfil '{profile_name}' guardado.")
-    
+
     set_active = input("¿Establecer este como perfil activo? (s/n): ").strip().lower()
-    if set_active == 's':
+    if set_active == "s":
         set_active_profile(profile_name)
         print(f"✅ Perfil '{profile_name}' establecido como activo.")
 

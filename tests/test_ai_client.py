@@ -26,13 +26,13 @@ class TestBlackboxClient:
         assert self.client.api_key == "test_api_key"
         assert self.client.model_config == {"model": "blackboxai/openai/o1"}
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_generate_response_success(self, mock_post):
         """Test generación exitosa de respuesta"""
         # Configurar mock
         mock_response = Mock()
         mock_response.json.return_value = {
-            'choices': [{'message': {'content': 'Test response'}}]
+            "choices": [{"message": {"content": "Test response"}}]
         }
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
@@ -44,11 +44,12 @@ class TestBlackboxClient:
         assert result == "Test response"
         mock_post.assert_called_once()
 
-    @patch('requests.post')
+    @patch("requests.post")
     def test_generate_response_failure(self, mock_post):
         """Test consulta fallida"""
         # Configurar mock para error de requests
         import requests
+
         mock_post.side_effect = requests.RequestException("Connection error")
 
         # Ejecutar consulta
@@ -67,9 +68,7 @@ class TestAIModelFactory:
     def test_create_blackbox_client(self):
         """Test creación de cliente Blackbox"""
         client = AIModelFactory.create_client(
-            "blackbox", 
-            "test_key", 
-            {"model": "blackbox"}
+            "blackbox", "test_key", {"model": "blackbox"}
         )
         assert isinstance(client, BlackboxClient)
 
@@ -109,35 +108,40 @@ class TestAIOrchestrator:
             },
         }
 
-    @patch('builtins.open', mock_open(read_data='{"default_model": "auto", "models": {"blackbox": {"api_key": "test_key", "model": "blackboxai/openai/o1", "enabled": true}}}'))
-    @patch('json.load')
+    @patch(
+        "builtins.open",
+        mock_open(
+            read_data='{"default_model": "auto", "models": {"blackbox": {"api_key": "test_key", "model": "blackboxai/openai/o1", "enabled": true}}}'
+        ),
+    )
+    @patch("json.load")
     def test_load_config_success(self, mock_json_load):
         """Test carga exitosa de configuración"""
         mock_json_load.return_value = self.mock_config
-        
+
         orchestrator = AIOrchestrator()
         # orquestador puede ajustar el modelo al mejor disponible; verificamos claves principales
         assert orchestrator.models_config.get("models", {}).get("blackbox") is not None
 
     def test_load_config_file_not_found(self):
         """Test configuración por defecto cuando no existe archivo"""
-        with patch('builtins.open', side_effect=FileNotFoundError):
+        with patch("builtins.open", side_effect=FileNotFoundError):
             orchestrator = AIOrchestrator()
             assert "default_model" in orchestrator.models_config
             assert "models" in orchestrator.models_config
 
-    @patch('builtins.open', mock_open())
-    @patch('json.load')
+    @patch("builtins.open", mock_open())
+    @patch("json.load")
     def test_get_client_success(self, mock_json_load):
         """Test obtención exitosa de cliente"""
         mock_json_load.return_value = self.mock_config
-        
+
         orchestrator = AIOrchestrator()
         client = orchestrator.get_client("blackbox")
         assert isinstance(client, BlackboxClient)
 
-    @patch('builtins.open', mock_open())
-    @patch('json.load')
+    @patch("builtins.open", mock_open())
+    @patch("json.load")
     def test_get_client_disabled_model(self, mock_json_load):
         """Si blackbox está deshabilitado, debe fallar"""
         disabled_cfg = {
@@ -156,14 +160,14 @@ class TestAIOrchestrator:
         with pytest.raises(ValueError, match="no está habilitado"):
             orchestrator.get_client("blackbox")
 
-    @patch('builtins.open', mock_open())
-    @patch('json.load')
+    @patch("builtins.open", mock_open())
+    @patch("json.load")
     def test_switch_model(self, mock_json_load):
         """Test cambio de modelo por defecto"""
         mock_json_load.return_value = self.mock_config
-        
-        with patch('builtins.open', mock_open()) as mock_file:
-            with patch('json.dump') as mock_json_dump:
+
+        with patch("builtins.open", mock_open()) as mock_file:
+            with patch("json.dump") as mock_json_dump:
                 orchestrator = AIOrchestrator()
                 # Solo 'blackbox' existe; cambiar a 'blackbox' es válido
                 orchestrator.switch_model("blackbox")

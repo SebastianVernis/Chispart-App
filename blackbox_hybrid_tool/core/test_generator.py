@@ -20,7 +20,7 @@ class CodeAnalyzer:
     def analyze_python_file(file_path: str) -> Dict[str, Any]:
         """Analiza un archivo Python y extrae funciones, clases y dependencias"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content)
@@ -31,52 +31,58 @@ class CodeAnalyzer:
 
             for node in ast.walk(tree):
                 if isinstance(node, ast.FunctionDef):
-                    functions.append({
-                        'name': node.name,
-                        'args': [arg.arg for arg in node.args.args],
-                        'line': node.lineno,
-                        'docstring': ast.get_docstring(node)
-                    })
+                    functions.append(
+                        {
+                            "name": node.name,
+                            "args": [arg.arg for arg in node.args.args],
+                            "line": node.lineno,
+                            "docstring": ast.get_docstring(node),
+                        }
+                    )
                 elif isinstance(node, ast.ClassDef):
                     methods = []
                     for item in node.body:
                         if isinstance(item, ast.FunctionDef):
-                            methods.append({
-                                'name': item.name,
-                                'args': [arg.arg for arg in item.args.args],
-                                'line': item.lineno
-                            })
+                            methods.append(
+                                {
+                                    "name": item.name,
+                                    "args": [arg.arg for arg in item.args.args],
+                                    "line": item.lineno,
+                                }
+                            )
 
-                    classes.append({
-                        'name': node.name,
-                        'methods': methods,
-                        'line': node.lineno,
-                        'docstring': ast.get_docstring(node)
-                    })
+                    classes.append(
+                        {
+                            "name": node.name,
+                            "methods": methods,
+                            "line": node.lineno,
+                            "docstring": ast.get_docstring(node),
+                        }
+                    )
                 elif isinstance(node, ast.Import):
                     for alias in node.names:
                         imports.append(alias.name)
                 elif isinstance(node, ast.ImportFrom):
-                    module = node.module or ''
+                    module = node.module or ""
                     for alias in node.names:
                         imports.append(f"{module}.{alias.name}")
 
             return {
-                'file_path': file_path,
-                'functions': functions,
-                'classes': classes,
-                'imports': imports,
-                'content': content
+                "file_path": file_path,
+                "functions": functions,
+                "classes": classes,
+                "imports": imports,
+                "content": content,
             }
 
         except Exception as e:
             return {
-                'file_path': file_path,
-                'error': str(e),
-                'functions': [],
-                'classes': [],
-                'imports': [],
-                'content': ''
+                "file_path": file_path,
+                "error": str(e),
+                "functions": [],
+                "classes": [],
+                "imports": [],
+                "content": "",
             }
 
 
@@ -85,9 +91,11 @@ class TestGeneratorClass:
 
     def __init__(self, ai_orchestrator: Optional[AIOrchestrator] = None):
         self.ai = ai_orchestrator or AIOrchestrator()
-        self.supported_languages = ['python', 'javascript', 'java', 'go']
+        self.supported_languages = ["python", "javascript", "java", "go"]
 
-    def generate_test_for_function(self, func_info: Dict[str, Any], context: Dict[str, Any]) -> str:
+    def generate_test_for_function(
+        self, func_info: Dict[str, Any], context: Dict[str, Any]
+    ) -> str:
         """Genera test para una función específica"""
 
         prompt = f"""
@@ -115,7 +123,9 @@ El test debe ser funcional y seguir las mejores prácticas de testing.
 
         return self.ai.generate_response(prompt, temperature=0.3)
 
-    def generate_test_for_class(self, class_info: Dict[str, Any], context: Dict[str, Any]) -> str:
+    def generate_test_for_class(
+        self, class_info: Dict[str, Any], context: Dict[str, Any]
+    ) -> str:
         """Genera tests para una clase completa"""
 
         prompt = f"""
@@ -141,55 +151,55 @@ Usa pytest y sigue las mejores prácticas de testing en Python.
 
         return self.ai.generate_response(prompt, temperature=0.3)
 
-    def generate_tests_for_file(self, file_path: str, language: str = 'python') -> Dict[str, Any]:
+    def generate_tests_for_file(
+        self, file_path: str, language: str = "python"
+    ) -> Dict[str, Any]:
         """Genera tests completos para un archivo"""
 
         if language.lower() not in self.supported_languages:
             return {
-                'error': f'Lenguaje {language} no soportado. Lenguajes disponibles: {", ".join(self.supported_languages)}'
+                "error": f'Lenguaje {language} no soportado. Lenguajes disponibles: {", ".join(self.supported_languages)}'
             }
 
-        if language.lower() == 'python':
+        if language.lower() == "python":
             analysis = CodeAnalyzer.analyze_python_file(file_path)
 
-            if 'error' in analysis:
-                return {'error': analysis['error']}
+            if "error" in analysis:
+                return {"error": analysis["error"]}
 
             tests = []
 
             # Generar tests para funciones
-            for func in analysis['functions']:
-                if not func['name'].startswith('_'):  # Solo funciones públicas
+            for func in analysis["functions"]:
+                if not func["name"].startswith("_"):  # Solo funciones públicas
                     test_code = self.generate_test_for_function(func, analysis)
-                    tests.append({
-                        'type': 'function',
-                        'target': func['name'],
-                        'test_code': test_code
-                    })
+                    tests.append(
+                        {
+                            "type": "function",
+                            "target": func["name"],
+                            "test_code": test_code,
+                        }
+                    )
 
             # Generar tests para clases
-            for cls in analysis['classes']:
+            for cls in analysis["classes"]:
                 test_code = self.generate_test_for_class(cls, analysis)
-                tests.append({
-                    'type': 'class',
-                    'target': cls['name'],
-                    'test_code': test_code
-                })
+                tests.append(
+                    {"type": "class", "target": cls["name"], "test_code": test_code}
+                )
 
             return {
-                'file_path': file_path,
-                'language': language,
-                'tests': tests,
-                'total_functions': len(analysis['functions']),
-                'total_classes': len(analysis['classes'])
+                "file_path": file_path,
+                "language": language,
+                "tests": tests,
+                "total_functions": len(analysis["functions"]),
+                "total_classes": len(analysis["classes"]),
             }
 
         else:
-            return {
-                'error': f'Generación de tests para {language} aún no implementada'
-            }
+            return {"error": f"Generación de tests para {language} aún no implementada"}
 
-    def create_test_file(self, source_file: str, output_dir: str = 'tests') -> str:
+    def create_test_file(self, source_file: str, output_dir: str = "tests") -> str:
         """Crea archivo de test basado en el archivo fuente"""
 
         source_path = Path(source_file)
@@ -198,19 +208,19 @@ Usa pytest y sigue las mejores prácticas de testing en Python.
 
         # Determinar lenguaje por extensión
         language_map = {
-            '.py': 'python',
-            '.js': 'javascript',
-            '.java': 'java',
-            '.go': 'go'
+            ".py": "python",
+            ".js": "javascript",
+            ".java": "java",
+            ".go": "go",
         }
 
-        language = language_map.get(source_path.suffix.lower(), 'python')
+        language = language_map.get(source_path.suffix.lower(), "python")
 
         # Generar tests
         result = self.generate_tests_for_file(str(source_path), language)
 
-        if 'error' in result:
-            raise ValueError(result['error'])
+        if "error" in result:
+            raise ValueError(result["error"])
 
         # Crear directorio de tests si no existe
         test_dir = Path(output_dir)
@@ -229,13 +239,13 @@ Generado por Blackbox Hybrid Tool
 import pytest
 '''
 
-        for test in result['tests']:
+        for test in result["tests"]:
             test_content += f"\n\n# Tests para {test['target']}\n"
-            test_content += test['test_code']
+            test_content += test["test_code"]
             test_content += "\n"
 
         # Escribir archivo de test
-        with open(test_filepath, 'w', encoding='utf-8') as f:
+        with open(test_filepath, "w", encoding="utf-8") as f:
             f.write(test_content)
 
         return str(test_filepath)
@@ -254,16 +264,18 @@ class CoverageAnalyzer:
         # En un caso real, esto integraría con coverage.py
 
         return {
-            'total_lines': test_results.get('total_lines', 0),
-            'covered_lines': test_results.get('covered_lines', 0),
-            'coverage_percentage': test_results.get('coverage_percentage', 0),
-            'missing_lines': test_results.get('missing_lines', [])
+            "total_lines": test_results.get("total_lines", 0),
+            "covered_lines": test_results.get("covered_lines", 0),
+            "coverage_percentage": test_results.get("coverage_percentage", 0),
+            "missing_lines": test_results.get("missing_lines", []),
         }
 
-    def generate_coverage_report(self, coverage_data: Dict[str, Any], format: str = 'text') -> str:
+    def generate_coverage_report(
+        self, coverage_data: Dict[str, Any], format: str = "text"
+    ) -> str:
         """Genera reporte de cobertura"""
 
-        if format == 'text':
+        if format == "text":
             return f"""
 Coverage Report
 ===============
@@ -272,7 +284,7 @@ Covered Lines: {coverage_data.get('covered_lines', 0)}
 Coverage: {coverage_data.get('coverage_percentage', 0):.1f}%
 Missing Lines: {len(coverage_data.get('missing_lines', []))}
 """
-        elif format == 'json':
+        elif format == "json":
             return json.dumps(coverage_data, indent=2)
 
         return "Formato no soportado"
