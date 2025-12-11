@@ -4,7 +4,14 @@ Utilidades para procesamiento de imágenes.
 from PIL import Image
 from pathlib import Path
 
-def overlay_logo(base_image_path: str, logo_path: str, output_path: str, position: str = "bottom_right", padding: int = 10):
+
+def overlay_logo(
+    base_image_path: str,
+    logo_path: str,
+    output_path: str,
+    position: str = "bottom_right",
+    padding: int = 10,
+):
     """
     Superpone un logo en una imagen base.
 
@@ -28,7 +35,10 @@ def overlay_logo(base_image_path: str, logo_path: str, output_path: str, positio
 
         # Calcular posición
         if position == "bottom_right":
-            pos = (base_image.width - logo.width - padding, base_image.height - logo.height - padding)
+            pos = (
+                base_image.width - logo.width - padding,
+                base_image.height - logo.height - padding,
+            )
         elif position == "bottom_left":
             pos = (padding, base_image.height - logo.height - padding)
         elif position == "top_right":
@@ -44,10 +54,10 @@ def overlay_logo(base_image_path: str, logo_path: str, output_path: str, positio
 
         # Componer la imagen base con la capa del logo
         composite = Image.alpha_composite(base_image, transparent_layer)
-        
+
         # Guardar como PNG para mantener la transparencia
         composite.save(output_path, "PNG")
-        
+
         print(f"✅ Logo superpuesto y guardado en: {output_path}")
 
     except FileNotFoundError as e:

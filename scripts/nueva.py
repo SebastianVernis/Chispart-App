@@ -4,16 +4,18 @@ import json
 import os
 import sys
 
+
 def read_file(path):
     if os.path.exists(path) and os.path.isfile(path):
         try:
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 content = f.read()
             return {"status": "success", "content": content}
         except Exception as e:
             return {"status": "error", "message": f"Error reading file: {e}"}
     else:
         return {"status": "error", "message": "File not found or not a file"}
+
 
 def read_directory(path):
     if not os.path.exists(path):
@@ -26,23 +28,24 @@ def read_directory(path):
             filepath = os.path.join(root, file)
             rel_path = os.path.relpath(filepath, path)
             try:
-                with open(filepath, 'r', encoding='utf-8') as f:
+                with open(filepath, "r", encoding="utf-8") as f:
                     content = f.read()
                 files_content[rel_path] = content
             except Exception as e:
                 files_content[rel_path] = f"Error reading file: {e}"
     return {"status": "success", "files": files_content}
 
+
 def main():
     parser = argparse.ArgumentParser(description="JSON file & directory reader tool.")
-    parser.add_argument('--json', type=str, help="JSON input string", default=None)
+    parser.add_argument("--json", type=str, help="JSON input string", default=None)
     args = parser.parse_args()
-    
+
     json_input = args.json
     if json_input is None:
         print("Ingresa el JSON:")
         json_input = sys.stdin.read()
-    
+
     try:
         request = json.loads(json_input)
     except Exception:
@@ -66,6 +69,7 @@ def main():
         print(json.dumps(response))
     else:
         print(json.dumps({"status": "error", "message": "Unsupported action"}))
+
 
 if __name__ == "__main__":
     main()

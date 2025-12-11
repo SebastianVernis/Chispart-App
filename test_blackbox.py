@@ -5,9 +5,11 @@ Script de prueba para verificar la configuración de Blackbox AI
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from blackbox_hybrid_tool.core.ai_client import AIOrchestrator
+
 
 def test_blackbox_connection():
     """Prueba la conexión con Blackbox AI"""
@@ -24,8 +26,7 @@ def test_blackbox_connection():
         # Probar una consulta simple
         print("🔄 Probando consulta a Blackbox AI...")
         response = orchestrator.generate_response(
-            "Hola, ¿puedes confirmar que estás funcionando?",
-            model_type="blackbox"
+            "Hola, ¿puedes confirmar que estás funcionando?", model_type="blackbox"
         )
 
         if "Error" in response:
@@ -39,6 +40,7 @@ def test_blackbox_connection():
     except Exception as e:
         print(f"❌ Error al probar Blackbox: {str(e)}")
         return False
+
 
 if __name__ == "__main__":
     success = test_blackbox_connection()

@@ -45,10 +45,74 @@
         .main-container {
             display: flex;
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px; /* Increased max-width for the new sidebar */
             height: 90vh;
             gap: 20px;
             padding: 0 15px;
+        }
+
+        #cycles-sidebar {
+            width: 280px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: var(--accent);
+        }
+
+        #new-chat-btn {
+            background: rgba(40, 40, 40, 0.5);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #new-chat-btn:hover {
+            background: rgba(60, 60, 60, 0.7);
+            color: var(--accent);
+        }
+
+        #cycles-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            list-style: none;
+            margin: 0;
+        }
+
+        .cycle-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .cycle-item:hover {
+            background: rgba(60, 60, 60, 0.6);
+        }
+
+        .cycle-item.active {
+            background: rgba(80, 80, 80, 0.8);
+            border-color: var(--accent);
         }
         
         #chat-container {
@@ -670,6 +734,15 @@
     </div>
 
     <div class="main-container">
+        <div id="cycles-sidebar" class="glass">
+            <div class="sidebar-header">
+                <h3>Chats</h3>
+                <button id="new-chat-btn">Nuevo Chat</button>
+            </div>
+            <ul id="cycles-list">
+                <!-- Chat tabs will be dynamically inserted here -->
+            </ul>
+        </div>
         <div id="chat-container">
             <div id="chat-header" class="glass">
                 <div style="display: flex; align-items: center;">
@@ -787,14 +860,22 @@
         const closeToolsBtn = document.getElementById('close-tools');
         const typingIndicator = document.querySelector('.typing-indicator');
         const toolsList = document.querySelector('.tools-list');
+        const cyclesList = document.getElementById('cycles-list');
+        const newChatBtn = document.getElementById('new-chat-btn');
         
         // Inicializar el explorador de archivos
         let fileExplorer = document.getElementById('file-explorer');
 
+        // Global state for multi-agent chat
+        let appState = {
+            cycles: [],
+            activeCycleId: null,
+        };
+
         // Inicialización y configuración de eventos
         initUI();
-        loadSuggestions();
         initEventListeners();
+        loadInitialCycles();
         
         // Inicializar componentes de la UI
         function initUI() {
@@ -812,18 +893,17 @@
         
         // Configurar todos los event listeners
         function initEventListeners() {
-            // Botón de enviar
-            sendButton.addEventListener('click', sendMessage);
+            sendButton.addEventListener('click', handleSendMessage);
             
-            // Enter para enviar, pero Shift+Enter para nueva línea
             promptInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    sendMessage();
+                    handleSendMessage();
                 }
             });
             
-            // Botón de limpiar chat
+            newChatBtn.addEventListener('click', createNewCycle);
+
             if (clearChatBtn) {
                 clearChatBtn.addEventListener('click', () => {
                     if (confirm('¿Estás seguro de querer limpiar toda la conversación?')) {
@@ -940,25 +1020,23 @@
         }
 
         // Agregar mensaje a la conversación
-        function addMessage(text, sender) {
-            // Crear el contenedor del mensaje
+        function addMessage(message) {
+            const { text, sender } = message;
             const messageElement = document.createElement('div');
-            messageElement.classList.add('message', sender + '-message');
+            messageElement.classList.add('message', `${sender}-message`);
             
-            // Crear el contenido del mensaje
             const contentElement = document.createElement('div');
             contentElement.classList.add('message-content');
             
             let processedText = text;
             
             // Para mensajes del bot, procesamos markdown, código y multimedia
-            if (sender === 'bot') {
+            if (sender !== 'user') {
                 // Primero formatear bloques de código si existen
                 if (text.includes('```')) {
                     processedText = formatCodeBlocks(processedText);
                 }
                 
-                // Procesar enlaces directos a imágenes y videos
                 // Convertir URLs como https://example.com/image.jpg a elementos HTML
                 const imageRegex = /(https?:\/\/\S+\.(jpg|jpeg|png|gif|webp)(\?\S*)?)/gi;
                 processedText = processedText.replace(imageRegex, (match) => {
@@ -995,7 +1073,7 @@
             scrollToBottom();
             
             // Inicializar listeners para medios interactivos si es mensaje del bot
-            if (sender === 'bot') {
+            if (sender !== 'user') {
                 setupMediaInteractions();
             }
         }
@@ -1110,66 +1188,38 @@
                 .replace(/'/g, "&#039;");
         }
 
-        // Enviar mensaje al backend
-        async function sendMessage() {
+        async function handleSendMessage() {
             const prompt = promptInput.value.trim();
             if (!prompt) return;
 
-            // Manejar comandos especiales
-            if (prompt.startsWith('/')) {
-                handleCommand(prompt);
-                promptInput.value = '';
+            if (!appState.activeCycleId) {
+                alert("Please select or create a chat first.");
                 return;
             }
 
-            // Agregar mensaje del usuario
-            addMessage(prompt, 'user');
+            const userMessage = { sender: 'user', text: prompt };
+            addMessage(userMessage);
             
-            // Limpiar input y ajustar altura
             promptInput.value = '';
-            promptInput.style.height = 'auto';
-            
-            // Mostrar indicador de "escribiendo..."
+            adjustTextareaHeight();
             showTypingIndicator();
 
             try {
-                // Deshabilitar input mientras se procesa
                 toggleInputState(false);
-                
-                // Enviar solicitud al backend
-                const response = await fetch('/chat', {
+                const response = await fetch(`/cycles/${appState.activeCycleId}/messages`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ 
-                        prompt: prompt,
-                        model_type: null,
-                        max_tokens: 2048,
-                        temperature: 0.7 
-                    }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt }),
                 });
 
-                // Ocultar indicador de escritura
-                hideTypingIndicator();
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                // Procesar respuesta
-                const data = await response.json();
-                
-                // Agregar un pequeño delay para simular efecto de escritura
-                setTimeout(() => {
-                    addMessage(data.response, 'bot');
-                }, 500);
-
+                const botMessage = await response.json();
+                addMessage(botMessage);
             } catch (error) {
-                hideTypingIndicator();
-                addMessage('Error al conectar con el backend: ' + error.message, 'bot');
+                addMessage({ sender: 'system', text: `Error: ${error.message}` });
             } finally {
-                // Re-habilitar input
+                hideTypingIndicator();
                 toggleInputState(true);
             }
         }
@@ -1317,35 +1367,73 @@
             promptInput.focus();
         }
         
-        // Cargar sugerencias iniciales
-        function loadSuggestions() {
-            const welcomeMessage = document.querySelector('.welcome-message');
-            if (!welcomeMessage) return;
-            
-            const suggestions = [
-                "Explícame qué puedes hacer",
-                "¿Cómo generar imágenes?",
-                "Quiero escribir tests para mi código",
-                "Analiza este repositorio"
-            ];
-            
-            const suggestionsContainer = document.createElement('div');
-            suggestionsContainer.classList.add('suggestions');
-            
-            suggestions.forEach(text => {
-                const chip = document.createElement('div');
-                chip.classList.add('suggestion-chip');
-                chip.textContent = text;
-                chip.addEventListener('click', () => {
-                    promptInput.value = text;
-                    sendMessage();
-                });
-                suggestionsContainer.appendChild(chip);
-            });
-            
-            welcomeMessage.appendChild(suggestionsContainer);
+        // Multi-agent cycle management functions
+        async function loadInitialCycles() {
+            try {
+                const response = await fetch('/cycles');
+                appState.cycles = await response.json();
+
+                if (appState.cycles.length === 0) {
+                    // If no cycles, create a default one
+                    await createNewCycle("General");
+                } else {
+                    appState.activeCycleId = appState.cycles[0].id;
+                    renderCycles();
+                    renderMessages();
+                }
+            } catch (error) {
+                console.error("Failed to load cycles:", error);
+            }
         }
-        // Configurar interacciones para elementos multimedia recién añadidos
+
+        async function createNewCycle(title) {
+            const cycleTitle = title || prompt("Enter a title for the new chat:");
+            if (!cycleTitle) return;
+
+            try {
+                const response = await fetch('/cycles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: cycleTitle, initial_prompt: "Hello!" }),
+                });
+                const newCycle = await response.json();
+                appState.cycles.push(newCycle);
+                appState.activeCycleId = newCycle.id;
+                renderCycles();
+                renderMessages();
+            } catch (error) {
+                console.error("Failed to create new cycle:", error);
+            }
+        }
+
+        function switchCycle(cycleId) {
+            appState.activeCycleId = cycleId;
+            renderCycles();
+            renderMessages();
+        }
+
+        function renderCycles() {
+            cyclesList.innerHTML = '';
+            appState.cycles.forEach(cycle => {
+                const item = document.createElement('li');
+                item.textContent = cycle.title;
+                item.className = 'cycle-item';
+                if (cycle.id === appState.activeCycleId) {
+                    item.classList.add('active');
+                }
+                item.addEventListener('click', () => switchCycle(cycle.id));
+                cyclesList.appendChild(item);
+            });
+        }
+
+        function renderMessages() {
+            messagesContainer.innerHTML = '';
+            const activeCycle = appState.cycles.find(c => c.id === appState.activeCycleId);
+            if (activeCycle) {
+                activeCycle.messages.forEach(addMessage);
+            }
+        }
+
         function setupMediaInteractions() {
             // Este método se llama después de añadir un mensaje que puede contener elementos multimedia
             // Aquí podríamos agregar más interactividad si fuera necesario en el futuro

@@ -38,7 +38,10 @@ def _parse_hunk_header(header: str) -> Tuple[int, int, int, int]:
     # Format: @@ -l,s +l,s @@ optional
     import re
 
-    m = re.match(r"@@ -(?P<sline>\d+)(,(?P<slen>\d+))? \+(?P<dline>\d+)(,(?P<dlen>\d+))? @@", header)
+    m = re.match(
+        r"@@ -(?P<sline>\d+)(,(?P<slen>\d+))? \+(?P<dline>\d+)(,(?P<dlen>\d+))? @@",
+        header,
+    )
     if not m:
         raise ValueError(f"Invalid hunk header: {header}")
     sline = int(m.group("sline"))
@@ -71,7 +74,11 @@ def parse_unified_diff(diff_text: str) -> List[FilePatch]:
                 sline, slen, dline, dlen = _parse_hunk_header(header)
                 i += 1
                 hunk_lines: List[Tuple[str, str]] = []
-                while i < len(lines) and (lines[i].startswith(" ") or lines[i].startswith("+") or lines[i].startswith("-")):
+                while i < len(lines) and (
+                    lines[i].startswith(" ")
+                    or lines[i].startswith("+")
+                    or lines[i].startswith("-")
+                ):
                     hunk_lines.append((lines[i][0], lines[i][1:]))
                     i += 1
                 hunks.append(Hunk(sline, slen, dline, dlen, hunk_lines))
@@ -92,17 +99,17 @@ def apply_patch_to_text(original: List[str], hunks: List[Hunk]) -> List[str]:
         # Verify context/removals match
         check_segment: List[str] = []
         for op, text in h.lines:
-            if op in (' ', '-'):
+            if op in (" ", "-"):
                 check_segment.append(text)
         # Extract source segment for verification
-        src_seg_len = len([1 for op, _ in h.lines if op in (' ', '-')])
-        src_segment = content[idx: idx + src_seg_len]
+        src_seg_len = len([1 for op, _ in h.lines if op in (" ", "-")])
+        src_segment = content[idx : idx + src_seg_len]
         if src_segment != check_segment:
             raise ValueError("Hunk context mismatch; cannot apply cleanly")
         # Construct destination segment
-        dst_segment: List[str] = [text for op, text in h.lines if op in (' ', '+')]
+        dst_segment: List[str] = [text for op, text in h.lines if op in (" ", "+")]
         # Replace in content
-        content[idx: idx + src_seg_len] = dst_segment
+        content[idx : idx + src_seg_len] = dst_segment
         # Update offset for subsequent hunks
         offset += len(dst_segment) - src_seg_len
     return content
@@ -111,7 +118,12 @@ def apply_patch_to_text(original: List[str], hunks: List[Hunk]) -> List[str]:
 def apply_unified_diff(diff_text: str, root_dir: str | Path = ".") -> Dict[str, Any]:
     root = Path(root_dir).resolve()
     patches = parse_unified_diff(diff_text)
-    results: Dict[str, Any] = {"applied": [], "created": [], "deleted": [], "errors": []}
+    results: Dict[str, Any] = {
+        "applied": [],
+        "created": [],
+        "deleted": [],
+        "errors": [],
+    }
 
     for p in patches:
         src = p.src.split()[-1]
@@ -132,9 +144,9 @@ def apply_unified_diff(diff_text: str, root_dir: str | Path = ".") -> Dict[str, 
                 lines: List[str] = []
                 for h in p.hunks:
                     for op, text in h.lines:
-                        if op in (' ', '+'):
+                        if op in (" ", "+"):
                             lines.append(text)
-                out_path = (root / dst_path)
+                out_path = root / dst_path
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
                 results["created"].append(str(out_path))
@@ -144,7 +156,7 @@ def apply_unified_diff(diff_text: str, root_dir: str | Path = ".") -> Dict[str, 
         if dst_path == "/dev/null":
             # Delete existing file
             try:
-                del_path = (root / src_path)
+                del_path = root / src_path
                 if del_path.exists():
                     del_path.unlink()
                 results["deleted"].append(str(del_path))
@@ -154,10 +166,10 @@ def apply_unified_diff(diff_text: str, root_dir: str | Path = ".") -> Dict[str, 
 
         # Modify existing file
         try:
-            target = (root / src_path)
+            target = root / src_path
             if not target.exists():
                 # If src doesn't exist, try dst as fallback
-                target = (root / dst_path)
+                target = root / dst_path
             original_text = target.read_text(encoding="utf-8").splitlines()
             new_text = apply_patch_to_text(original_text, p.hunks)
             target.write_text("\n".join(new_text) + "\n", encoding="utf-8")
@@ -166,4 +178,3 @@ def apply_unified_diff(diff_text: str, root_dir: str | Path = ".") -> Dict[str, 
             results["errors"].append({"file": dst_path or src_path, "error": str(e)})
 
     return results
-

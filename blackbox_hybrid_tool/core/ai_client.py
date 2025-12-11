@@ -46,7 +46,9 @@ class BlackboxClient(AIClient):
         }
 
         # Permitir override del modelo vía kwargs['model']
-        model_name = kwargs.get("model") or self.model_config.get("model", "blackboxai/openai/o1")
+        model_name = kwargs.get("model") or self.model_config.get(
+            "model", "blackboxai/openai/o1"
+        )
 
         # Mensajes (pueden incluir rol system)
         messages = kwargs.get("messages")
@@ -66,7 +68,7 @@ class BlackboxClient(AIClient):
         tools = kwargs.get("tools")
         if tools:
             data["tools"] = tools
-            
+
         # Permitir forzar tool choice
         tool_choice = kwargs.get("tool_choice")
         if tool_choice:
@@ -74,6 +76,7 @@ class BlackboxClient(AIClient):
 
         try:
             if debug:
+
                 def _mask(val: Optional[str]) -> str:
                     if not val:
                         return ""
@@ -102,14 +105,14 @@ class BlackboxClient(AIClient):
                     print("[DEBUG] Raw Response:", response.text)
             # Extraer la respuesta completa del mensaje
             message = result.get("choices", [{}])[0].get("message", {})
-            
+
             # Si hay tool calls, devolverlos junto con el contenido
             if "tool_calls" in message:
                 return {
                     "content": message.get("content", ""),
-                    "tool_calls": message["tool_calls"]
+                    "tool_calls": message["tool_calls"],
                 }
-            
+
             # Respuesta normal sin tool calls
             return message.get("content", "")
 
@@ -151,13 +154,17 @@ class AIOrchestrator:
             self.config_file = os.path.join("config", "models.json")
             if not os.path.exists(self.config_file):
                 # If new default doesn't exist, fall back to old default for compatibility
-                self.config_file = os.path.join("blackbox_hybrid_tool", "config", "models.json")
+                self.config_file = os.path.join(
+                    "blackbox_hybrid_tool", "config", "models.json"
+                )
         else:
             # Check new default location first
             self.config_file = os.path.join("config", "models.json")
             if not os.path.exists(self.config_file):
                 # If new default doesn't exist, fall back to old default for compatibility
-                self.config_file = os.path.join("blackbox_hybrid_tool", "config", "models.json")
+                self.config_file = os.path.join(
+                    "blackbox_hybrid_tool", "config", "models.json"
+                )
         self.models_config = self._load_config()
         # Configurar el mejor modelo disponible al iniciar
         try:
@@ -241,12 +248,24 @@ class AIOrchestrator:
         # Preferencias por calidad/caso de uso (sin gemini)
         prefs = [
             # razonamiento de alta calidad
-            "o3", "o1", "claude-3.7", "claude-3.5", "deepseek-r1",
+            "o3",
+            "o1",
+            "claude-3.7",
+            "claude-3.5",
+            "deepseek-r1",
             # código/generalistas potentes
-            "gpt-4o", "gpt-4.1", "mixtral", "llama-3.1", "llama-3",
-            "qwen3", "qwen-3", "qwen2.5",
+            "gpt-4o",
+            "gpt-4.1",
+            "mixtral",
+            "llama-3.1",
+            "llama-3",
+            "qwen3",
+            "qwen-3",
+            "qwen2.5",
             # rápidos/compactos
-            "flash", "mini", "sonar",
+            "flash",
+            "mini",
+            "sonar",
         ]
 
         def score(model_id: str) -> tuple:
@@ -339,8 +358,12 @@ class AIOrchestrator:
                         {
                             "model": r.get("Modelo", "").strip(),
                             "context": r.get("Contexto", "").strip(),
-                            "input_cost": str(r.get("Costo de Entrada ($/M tokens)", "")).strip(),
-                            "output_cost": str(r.get("Costo de Salida ($/M tokens)", "")).strip(),
+                            "input_cost": str(
+                                r.get("Costo de Entrada ($/M tokens)", "")
+                            ).strip(),
+                            "output_cost": str(
+                                r.get("Costo de Salida ($/M tokens)", "")
+                            ).strip(),
                         }
                     )
             if rows:
