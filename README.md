@@ -23,30 +23,72 @@ Plataforma de IA multiagente para creación de contenido, con interfaz glassmorp
 
 ### Usando Docker Compose (Recomendado)
 
+#### **Inicio Rápido con Script**
+
+```bash
+# 1. Verificar requisitos y configurar
+./docker-quick-start.sh setup
+
+# 2. Construir imagen
+./docker-quick-start.sh build
+
+# 3. Iniciar servicios
+./docker-quick-start.sh start
+
+# Ver logs
+./docker-quick-start.sh logs
+
+# Ver estado
+./docker-quick-start.sh status
+```
+
+#### **Instalación Manual**
+
 1. **Navega al directorio del proyecto**:
    ```bash
    cd blackbox-hybrid-tool
    ```
 
 2. **Configura las variables de entorno**:
-   Crea un archivo `.env` con al menos la clave de Blackbox y, opcionalmente, rutas de configuración:
+   Crea un archivo `.env` con al menos la clave de Blackbox:
    ```env
    BLACKBOX_API_KEY=tu_clave_blackbox
-   # Opcional: ruta al archivo de configuración JSON (por defecto: config/models.json)
+   
+   # Configuración de la aplicación
+   APP_NAME=Chispart AI
+   APP_VERSION=1.0.0
+   PORT=8005
+   
+   # Opcional: ruta al archivo de configuración JSON
    CONFIG_FILE=config/models.json
-   # Opcional: CSV con catálogo de modelos (ver sección Importación CSV)
-   BLACKBOX_MODELS_CSV=/ruta/a/modelos_blackbox.csv
+   
+   # Opcional: CSV con catálogo de modelos
+   # BLACKBOX_MODELS_CSV=/ruta/a/modelos_blackbox.csv
    ```
 
 3. **Construye y ejecuta el contenedor**:
    ```bash
-docker-compose up --build
+   # Producción
+   docker-compose up -d --build
+   
+   # Desarrollo (con hot reload)
+   docker-compose --profile dev up
    ```
 
 4. **Verifica que la aplicación esté ejecutándose**:
    ```bash
-   curl http://localhost:8000/health
+   # Health check
+   curl http://localhost:8005/health
+   
+   # Ver estado de contenedores
+   docker-compose ps
    ```
+
+5. **Accede a la aplicación**:
+   - Frontend: http://localhost:8005
+   - Playground: http://localhost:8005/playground
+   - API Docs: http://localhost:8005/docs
+   - Health: http://localhost:8005/health
 
 ### Desarrollo Local
 
