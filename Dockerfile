@@ -20,8 +20,8 @@ COPY . .
 # Crear directorio para logs
 RUN mkdir -p /app/logs
 
-# Exponer puerto (si se implementa servidor web)
-# EXPOSE 8000
+# Exponer puerto
+EXPOSE 8000
 
-# Comando por defecto
-CMD ["python", "-m", "blackbox_hybrid_tool.cli.main"]
+# Comando por defecto - ejecutar servidor FastAPI
+CMD ["python", "main.py"]
