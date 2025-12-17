@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chispart AI - Plataforma de IA Multiagente</title>
+    <meta name="description" content="Transforma tu negocio con IA multiagente. Automatiza, optimiza y escala con Chispart AI.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Chispart AI Brand Colors */
+            --primary: #f472b6;
+            --primary-dark: #db2777;
+            --primary-light: #fbcfe8;
+            --secondary: #67e8f9;
+            --secondary-dark: #06b6d4;
+            
+            /* Neutral Colors */
+            --bg-dark: #0a0a0a;
+            --bg-darker: #050505;
+            --surface: rgba(30, 30, 30, 0.8);
+            --surface-light: rgba(40, 40, 40, 0.9);
+            --text: #f0f0f0;
+            --text-muted: #a0a0a0;
+            --border: rgba(255, 255, 255, 0.1);
+            
+            /* Glassmorphism */
+            --glass-bg: rgba(20, 20, 20, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            
+            /* Shadows */
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 20px rgba(244, 114, 182, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        .bg-animation::before,
+        .bg-animation::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            filter: blur(100px);
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        .bg-animation::before {
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            top: -200px;
+            left: -200px;
+            animation-delay: 0s;
+        }
+        
+        .bg-animation::after {
+            background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+            bottom: -200px;
+            right: -200px;
+            animation-delay: 10s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, -100px) scale(1.1); }
+            66% { transform: translate(-100px, 100px) scale(0.9); }
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 0;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        .cta-button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+        }
+        
+        .hero-content {
+            max-width: 900px;
+        }
+        
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-md);
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--surface-light);
+            border-color: var(--primary);
+        }
+        
+        /* Section Styles */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .feature-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+        }
+        
+        .feature-card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        
+        /* Pricing Section */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .pricing-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .pricing-card.featured {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-glow);
+            transform: scale(1.05);
+        }
+        
+        .pricing-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .pricing-card.featured:hover {
+            transform: translateY(-5px) scale(1.07);
+        }
+        
+        .pricing-card h3 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .pricing-price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 1rem 0;
+        }
+        
+        .pricing-price span {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        
+        .pricing-features {
+            list-style: none;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .pricing-features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+        
+        .check-icon {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        /* Demo Section */
+        .demo-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .demo-chat {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            max-width: 80%;
+        }
+        
+        .chat-message.user {
+            background: var(--primary-dark);
+            margin-left: auto;
+            text-align: right;
+        }
+        
+        .chat-message.bot {
+            background: var(--surface-light);
+        }
+        
+        .demo-input-container {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .demo-input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text);
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        
+        .demo-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* Registration Form */
+        .registration-form {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 600px;
+            margin: 3rem auto;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.875rem;
+            color: var(--text);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        /* Payment Section */
+        .payment-methods {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .payment-method {
+            flex: 1;
+            min-width: 200px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .payment-method:hover {
+            border-color: var(--primary);
+            background: var(--surface-light);
+        }
+        
+        .payment-method.selected {
+            border-color: var(--primary);
+            background: var(--surface-light);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .payment-method img {
+            height: 40px;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Hidden Sections */
+        .hidden {
+            display: none;
+        }
+        
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Success Message */
+        .success-message {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .success-message h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--bg-darker);
+            border-top: 1px solid var(--border);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">✨ Chispart AI</div>
+            <ul class="nav-links">
+                <li><a href="#features">Características</a></li>
+                <li><a href="#pricing">Precios</a></li>
+                <li><a href="#demo">Demo</a></li>
+            </ul>
+            <a href="#register" class="cta-button">Comenzar Ahora</a>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>
+                Transforma tu Negocio con<br>
+                <span class="gradient-text">IA Multiagente</span>
+            </h1>
+            <p>
+                Automatiza procesos, optimiza decisiones y escala tu empresa con la plataforma de IA más avanzada del mercado.
+            </p>
+            <div class="hero-buttons">
+                <a href="#pricing" class="btn-primary">Ver Planes</a>
+                <a href="#demo" class="btn-secondary">Probar Demo</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="features">
+        <h2 class="section-title">Características Poderosas</h2>
+        <p class="section-subtitle">
+            Todo lo que necesitas para llevar tu negocio al siguiente nivel
+        </p>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>Agentes Inteligentes</h3>
+                <p>Múltiples agentes de IA trabajando en conjunto para resolver problemas complejos de forma autónoma.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Automatización Total</h3>
+                <p>Automatiza tareas repetitivas y libera tiempo para enfocarte en lo que realmente importa.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Análisis Avanzado</h3>
+                <p>Obtén insights profundos de tus datos con análisis impulsados por IA en tiempo real.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Seguridad Empresarial</h3>
+                <p>Protección de datos de nivel empresarial con encriptación end-to-end y cumplimiento normativo.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>Integración Fácil</h3>
+                <p>Conecta con tus herramientas favoritas mediante APIs y webhooks sin complicaciones.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Escalabilidad Ilimitada</h3>
+                <p>Crece sin límites con infraestructura cloud que se adapta a tus necesidades.</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pricing Section -->
+    <section id="pricing">
+        <h2 class="section-title">Planes y Precios</h2>
+        <p class="section-subtitle">
+            Elige el plan perfecto para tu negocio
+        </p>
+        
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <h3>Starter</h3>
+                <div class="pricing-price">
+                    $49<span>/mes</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><span class="check-icon">✓</span> 1 Agente IA</li>
+                    <li><span class="check-icon">✓</span> 1,000 consultas/mes</li>
+                    <li><span class="check-icon">✓</span> Soporte por email</li>
+                    <li><span class="check-icon">✓</span> Integraciones básicas</li>
+                    <li><span class="check-icon">✓</span> Dashboard analytics</li>
+                </ul>
+                <button class="btn-primary" onclick="selectPlan('starter', 49)">Seleccionar Plan</button>
+            </div>
+            
+            <div class="pricing-card featured">
+                <div class="pricing-badge">Más Popular</div>
+                <h3>Professional</h3>
+                <div class="pricing-price">
+                    $149<span>/mes</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><span class="check-icon">✓</span> 5 Agentes IA</li>
+                    <li><span class="check-icon">✓</span> 10,000 consultas/mes</li>
+                    <li><span class="check-icon">✓</span> Soporte prioritario 24/7</li>
+                    <li><span class="check-icon">✓</span> Todas las integraciones</li>
+                    <li><span class="check-icon">✓</span> Analytics avanzado</li>
+                    <li><span class="check-icon">✓</span> API personalizada</li>
+                    <li><span class="check-icon">✓</span> Entrenamiento personalizado</li>
+                </ul>
+                <button class="btn-primary" onclick="selectPlan('professional', 149)">Seleccionar Plan</button>
+            </div>
+            
+            <div class="pricing-card">
+                <h3>Enterprise</h3>
+                <div class="pricing-price">
+                    $499<span>/mes</span>
+                </div>
+                <ul class="pricing-features">
+                    <li><span class="check-icon">✓</span> Agentes ilimitados</li>
+                    <li><span class="check-icon">✓</span> Consultas ilimitadas</li>
+                    <li><span class="check-icon">✓</span> Soporte dedicado</li>
+                    <li><span class="check-icon">✓</span> Integraciones custom</li>
+                    <li><span class="check-icon">✓</span> SLA garantizado</li>
+                    <li><span class="check-icon">✓</span> Infraestructura dedicada</li>
+                    <li><span class="check-icon">✓</span> Consultoría estratégica</li>
+                    <li><span class="check-icon">✓</span> Onboarding personalizado</li>
+                </ul>
+                <button class="btn-primary" onclick="selectPlan('enterprise', 499)">Seleccionar Plan</button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Demo Section -->
+    <section id="demo">
+        <h2 class="section-title">Prueba Nuestro Demo</h2>
+        <p class="section-subtitle">
+            Experimenta el poder de Chispart AI en acción
+        </p>
+        
+        <div class="demo-container">
+            <div class="demo-chat" id="demoChat">
+                <div class="chat-message bot">
+                    <strong>Asistente Chispart AI</strong>
+                    <p>¡Hola! Soy tu asistente de ventas inteligente. Estoy aquí para ayudarte a descubrir cómo Chispart AI puede transformar tu negocio. ¿Qué te gustaría saber?</p>
+                </div>
+            </div>
+            <div class="demo-input-container">
+                <input type="text" class="demo-input" id="demoInput" placeholder="Escribe tu pregunta aquí..." onkeypress="handleDemoEnter(event)">
+                <button class="btn-primary" onclick="sendDemoMessage()">Enviar</button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Registration Section -->
+    <section id="register" class="hidden">
+        <h2 class="section-title">Completa tu Registro</h2>
+        <p class="section-subtitle">
+            Estás a un paso de transformar tu negocio
+        </p>
+        
+        <form class="registration-form" id="registrationForm" onsubmit="handleRegistration(event)">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">Nombre *</label>
+                    <input type="text" id="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Apellido *</label>
+                    <input type="text" id="lastName" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Corporativo *</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="company">Empresa *</label>
+                <input type="text" id="company" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="phone">Teléfono *</label>
+                    <input type="tel" id="phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="country">País *</label>
+                    <select id="country" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="MX">México</option>
+                        <option value="US">Estados Unidos</option>
+                        <option value="ES">España</option>
+                        <option value="AR">Argentina</option>
+                        <option value="CO">Colombia</option>
+                        <option value="CL">Chile</option>
+                        <option value="PE">Perú</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="industry">Industria *</label>
+                <select id="industry" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="tech">Tecnología</option>
+                    <option value="finance">Finanzas</option>
+                    <option value="retail">Retail</option>
+                    <option value="healthcare">Salud</option>
+                    <option value="education">Educación</option>
+                    <option value="other">Otra</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="employees">Tamaño de Empresa *</label>
+                <select id="employees" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="1-10">1-10 empleados</option>
+                    <option value="11-50">11-50 empleados</option>
+                    <option value="51-200">51-200 empleados</option>
+                    <option value="201-500">201-500 empleados</option>
+                    <option value="500+">500+ empleados</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">¿Cómo planeas usar Chispart AI?</label>
+                <textarea id="message" rows="4" placeholder="Cuéntanos sobre tus necesidades..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" required>
+                    Acepto los <a href="#" style="color: var(--primary);">términos y condiciones</a> y la <a href="#" style="color: var(--primary);">política de privacidad</a>
+                </label>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%;">Continuar al Pago</button>
+        </form>
+    </section>
+    
+    <!-- Payment Section -->
+    <section id="payment" class="hidden">
+        <h2 class="section-title">Método de Pago</h2>
+        <p class="section-subtitle">
+            Selecciona tu método de pago preferido
+        </p>
+        
+        <div class="registration-form">
+            <div class="payment-methods">
+                <div class="payment-method" onclick="selectPaymentMethod('paypal')">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💳</div>
+                    <strong>PayPal</strong>
+                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">Pago seguro con PayPal</p>
+                </div>
+                <div class="payment-method" onclick="selectPaymentMethod('clip')">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📱</div>
+                    <strong>Clip</strong>
+                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem;">Pago con Clip</p>
+                </div>
+            </div>
+            
+            <div id="paymentDetails" class="hidden">
+                <div class="form-group">
+                    <label>Plan Seleccionado</label>
+                    <div style="background: var(--surface); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <strong id="selectedPlanName"></strong>
+                        <div style="font-size: 2rem; color: var(--primary); margin: 0.5rem 0;">
+                            $<span id="selectedPlanPrice"></span><span style="font-size: 1rem; color: var(--text-muted);">/mes</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn-primary" style="width: 100%;" onclick="processPayment()">
+                    Procesar Pago
+                </button>
+                
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.875rem; margin-top: 1rem;">
+                    🔒 Pago seguro y encriptado
+                </p>
+            </div>
+            
+            <div id="paymentProcessing" class="hidden">
+                <div class="spinner"></div>
+                <p style="text-align: center; color: var(--text-muted);">Procesando tu pago...</p>
+            </div>
+            
+            <div id="paymentSuccess" class="hidden">
+                <div class="success-message">
+                    <h3>🎉 ¡Pago Exitoso!</h3>
+                    <p>Tu suscripción ha sido activada. Recibirás un email de confirmación en breve.</p>
+                    <button class="btn-secondary" onclick="window.location.href='http://localhost:8005'" style="margin-top: 1rem;">
+                        Ir al Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Chispart AI. Todos los derechos reservados.</p>
+        <p style="margin-top: 0.5rem;">Desarrollado con ✨ por Chispart AI Team</p>
+    </footer>
+    
+    <script src="js/main.js"></script>
+</body>
+</html>
