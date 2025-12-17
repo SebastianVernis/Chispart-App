@@ -334,6 +334,220 @@ async def link_github_to_cycle(cycle_id: str, link: GitHubLink):
     return {"status": "success", "cycle": cycle}
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint para verificar el estado del servicio."""
+    try:
+        if orchestrator is None:
+            return {"status": "unhealthy", "error": "Orchestrator not initialized"}
+        
+        # Verificar que el orquestador esté funcionando
+        config_status = "ok" if orchestrator.models_config else "error"
+        
+        return {
+            "status": "healthy",
+            "orchestrator": config_status,
+            "version": APP_VERSION,
+            "app_name": APP_NAME
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return {"status": "unhealthy", "error": str(e)}
+
+
+@app.get("/models")
+async def get_models():
+    """Obtener lista de modelos disponibles."""
+    try:
+        if orchestrator is None:
+            raise HTTPException(status_code=500, detail="Orchestrator not initialized")
+        
+        # Obtener configuración de modelos
+        models_config = orchestrator.models_config.get("models", {})
+        default_model = orchestrator.models_config.get("default_model", "auto")
+        available_models = orchestrator.models_config.get("available_models", [])
+        
+        # Formatear respuesta
+        models_list = []
+        for name, config in models_config.items():
+            models_list.append({
+                "name": name,
+                "model": config.get("model", ""),
+                "enabled": config.get("enabled", False)
+            })
+        
+        return {
+            "models": models_list,
+            "default_model": default_model,
+            "available_models": available_models
+        }
+    except Exception as e:
+        logger.error(f"Error getting models: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/models/switch")
+async def switch_model(request: SwitchModelRequest):
+    """Cambiar el modelo por defecto."""
+    try:
+        if orchestrator is None:
+            raise HTTPException(status_code=500, detail="Orchestrator not initialized")
+        
+        # Actualizar el modelo por defecto
+        orchestrator.models_config["default_model"] = request.model
+        
+        # Guardar configuración si es posible
+        config_file = orchestrator.config_file
+        try:
+            with open(config_file, "w") as f:
+                json.dump(orchestrator.models_config, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Could not save config: {str(e)}")
+        
+        return {
+            "status": "success",
+            "message": f"Model switched to {request.model}",
+            "current_model": request.model
+        }
+    except Exception as e:
+        logger.error(f"Error switching model: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """Endpoint principal de chat con IA."""
+    try:
+        if orchestrator is None:
+            raise HTTPException(status_code=500, detail="Orchestrator not initialized")
+        
+        logger.info(f"Chat request: prompt='{request.prompt[:50]}...', model={request.model_type}")
+        
+        # Generar respuesta usando el orquestador
+        response_data = orchestrator.generate_response(
+            prompt=request.prompt,
+            model_type=request.model_type,
+            max_tokens=request.max_tokens,
+            temperature=request.temperature
+        )
+        
+        # Extraer contenido de la respuesta
+        if isinstance(response_data, dict):
+            response_text = response_data.get("content", str(response_data))
+            model_used = response_data.get("model", request.model_type or "auto")
+        else:
+            response_text = str(response_data)
+            model_used = request.model_type or "auto"
+        
+        return ChatResponse(
+            response=response_text,
+            model_used=model_used,
+            status="success"
+        )
+    except Exception as e:
+        logger.error(f"Error in chat endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/files/write")
+async def write_file_endpoint(request: WriteFileRequest):
+    """Crear o escribir un archivo de texto."""
+    try:
+        # Obtener el directorio raíz permitido
+        write_root = os.getenv("WRITE_ROOT", "/app")
+        
+        # Construir ruta absoluta
+        target_path = os.path.join(write_root, request.path.lstrip("/"))
+        target_path = os.path.abspath(target_path)
+        
+        # Verificar que la ruta esté dentro del directorio permitido
+        if not target_path.startswith(os.path.abspath(write_root)):
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: path outside allowed directory"
+            )
+        
+        # Verificar si el archivo existe
+        if os.path.exists(target_path) and not request.overwrite:
+            raise HTTPException(
+                status_code=409,
+                detail="File already exists. Use overwrite=true to replace."
+            )
+        
+        # Crear directorios intermedios si no existen
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+        
+        # Escribir el archivo
+        with open(target_path, "w", encoding="utf-8") as f:
+            f.write(request.content)
+        
+        return {
+            "status": "success",
+            "path": target_path,
+            "size": len(request.content),
+            "message": "File written successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error writing file: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/patch/apply")
+async def apply_patch_endpoint(request: ApplyPatchRequest):
+    """Aplicar un parche unified diff."""
+    try:
+        # Obtener el directorio raíz
+        root_dir = request.root or os.getenv("WRITE_ROOT", "/app")
+        root_path = Path(root_dir).resolve()
+        
+        # Aplicar el parche
+        result = apply_unified_diff(
+            patch_content=request.patch,
+            root_dir=root_path,
+            dry_run=False
+        )
+        
+        return {
+            "status": "success",
+            "result": result,
+            "message": "Patch applied successfully"
+        }
+    except Exception as e:
+        logger.error(f"Error applying patch: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/playground")
+async def playground():
+    """Servir la interfaz de playground."""
+    playground_path = os.path.join("static", "playground.html")
+    if os.path.exists(playground_path):
+        return FileResponse(
+            playground_path,
+            media_type="text/html",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
+    # Intentar con playground mejorado
+    playground_improved = os.path.join("static", "playground_improved.html")
+    if os.path.exists(playground_improved):
+        return FileResponse(
+            playground_improved,
+            media_type="text/html",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
+    raise HTTPException(status_code=404, detail="Playground not found")
+
+
 @app.get("/")
 async def read_root():
     """Sirve la interfaz de chat principal."""

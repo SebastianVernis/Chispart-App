@@ -1,27 +1,61 @@
+# Multi-stage build para optimización
+FROM python:3.11-slim as builder
+
+# Instalar dependencias de compilación
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar solo archivos de requisitos primero (mejor caché)
+COPY requirements.txt .
+
+# Instalar dependencias en un directorio temporal
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Etapa final
 FROM python:3.11-slim
+
+# Instalar curl para healthcheck
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear usuario no-root para seguridad
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app /app/logs /app/config /app/static /app/frontend && \
+    chown -R appuser:appuser /app
 
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copiar archivos de requisitos
-COPY requirements.txt .
-
-# Instalar dependencias de Python
-RUN pip install --no-cache-dir -r requirements.txt
+# Copiar dependencias de Python desde builder
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 
 # Copiar código fuente
-COPY . .
+COPY --chown=appuser:appuser . .
 
-# Crear directorio para logs
-RUN mkdir -p /app/logs
+# Asegurar que los directorios necesarios existan
+RUN mkdir -p /app/logs /app/config /app/static /app/frontend && \
+    chown -R appuser:appuser /app
 
-# Exponer puerto (si se implementa servidor web)
-# EXPOSE 8000
+# Cambiar a usuario no-root
+USER appuser
 
-# Comando por defecto
-CMD ["python", "-m", "blackbox_hybrid_tool.cli.main"]
+# Agregar binarios de Python al PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Exponer puerto
+EXPOSE 8000
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Comando por defecto - servidor FastAPI
+CMD ["python", "main.py"]
