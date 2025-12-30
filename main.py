@@ -10,9 +10,10 @@ import logging
 import shutil
 from typing import Optional, Dict, Any, List
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 import uuid
@@ -101,11 +102,65 @@ APP_NAME = os.getenv("APP_NAME", "Blackbox Hybrid Tool")
 APP_TAGLINE = os.getenv("APP_TAGLINE", "API para herramienta híbrida de modelos AI")
 APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
 
-# Crear aplicación FastAPI con branding configurable
+# Instancia global del orquestador
+orchestrator = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for startup and shutdown"""
+    global orchestrator
+    try:
+        config_file = os.getenv("CONFIG_FILE")
+        if not config_file or not os.path.exists(config_file):
+            config_file = os.getenv(
+                "CONFIG_FILE", os.path.join("config", "models.json")
+            )
+            if not os.path.exists(config_file):
+                config_file = os.path.join(
+                    "blackbox_hybrid_tool", "config", "models.json"
+                )
+        orchestrator = AIOrchestrator(config_file)
+        if os.getenv("AUTO_SNAPSHOT", "true").lower() in ("1", "true", "yes"):
+            try:
+                changed, meta = ensure_embedded_snapshot(Path(".").resolve())
+                if changed:
+                    logger.info(
+                        f"Snapshot embebido actualizado (files={meta.get('file_count')}, hash={meta.get('sha256')[:8]}...)"
+                    )
+                else:
+                    logger.info("Snapshot embebido al día")
+            except Exception:
+                logger.warning("No se pudo generar/verificar snapshot embebido")
+        csv_path = os.getenv(
+            "BLACKBOX_MODELS_CSV",
+            "modelos_blackbox.csv",
+        )
+        try:
+            if os.path.exists(csv_path):
+                count = orchestrator.import_available_models_from_csv(csv_path)
+                if count:
+                    logger.info(f"Modelos disponibles importados desde CSV: {count}")
+        except Exception as _:
+            pass
+
+        logger.info("Orquestador AI inicializado correctamente")
+    except Exception as e:
+        logger.error(f"Error al inicializar el orquestador: {str(e)}")
+        raise
+    
+    yield
+    
+    # Shutdown logic (if needed)
+    logger.info("Shutting down application")
+
+
+# Crear aplicación FastAPI con branding configurable y lifespan
 app = FastAPI(
     title=f"{APP_NAME} API",
     description=APP_TAGLINE,
     version=APP_VERSION,
+    lifespan=lifespan,
 )
 
 # Configurar CORS
@@ -189,52 +244,159 @@ class ChangeRootRequest(BaseModel):
     new_root: str
 
 
-# Instancia global del orquestador
-orchestrator = None
+class FileItem(BaseModel):
+    name: str
+    type: str  # "file" or "directory"
+    size: Optional[int] = None
+    modified: Optional[float] = None
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Inicializar el orquestador al iniciar la aplicación"""
-    global orchestrator
+class FilesResponse(BaseModel):
+    files: List[FileItem]
+    path: str
+    error: Optional[str] = None
+
+
+# ===================================
+# File System API
+# ===================================
+
+
+@app.get("/files", response_model=FilesResponse)
+async def list_files(path: str = Query(default=".")):
+    """List files and directories in the specified path."""
     try:
-        config_file = os.getenv("CONFIG_FILE")
-        if not config_file or not os.path.exists(config_file):
-            config_file = os.getenv(
-                "CONFIG_FILE", os.path.join("config", "models.json")
+        # Get the root directory for file operations
+        root_dir = os.getenv("WRITE_ROOT", os.getcwd())
+        
+        # Construct the full path
+        if path == ".":
+            full_path = root_dir
+        else:
+            full_path = os.path.join(root_dir, path.lstrip("/"))
+        
+        # Normalize and validate the path
+        full_path = os.path.abspath(full_path)
+        
+        # Security check: ensure path is within root directory
+        if not full_path.startswith(os.path.abspath(root_dir)):
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: path outside allowed directory"
             )
-            if not os.path.exists(config_file):
-                config_file = os.path.join(
-                    "blackbox_hybrid_tool", "config", "models.json"
-                )
-        orchestrator = AIOrchestrator(config_file)
-        if os.getenv("AUTO_SNAPSHOT", "true").lower() in ("1", "true", "yes"):
-            try:
-                changed, meta = ensure_embedded_snapshot(Path(".").resolve())
-                if changed:
-                    logger.info(
-                        f"Snapshot embebido actualizado (files={meta.get('file_count')}, hash={meta.get('sha256')[:8]}...)"
-                    )
-                else:
-                    logger.info("Snapshot embebido al día")
-            except Exception:
-                logger.warning("No se pudo generar/verificar snapshot embebido")
-        csv_path = os.getenv(
-            "BLACKBOX_MODELS_CSV",
-            "modelos_blackbox.csv",
-        )
+        
+        # Check if path exists
+        if not os.path.exists(full_path):
+            return FilesResponse(
+                files=[],
+                path=path,
+                error=f"Path does not exist: {path}"
+            )
+        
+        # Check if it's a directory
+        if not os.path.isdir(full_path):
+            return FilesResponse(
+                files=[],
+                path=path,
+                error=f"Path is not a directory: {path}"
+            )
+        
+        # List directory contents
+        files = []
         try:
-            if os.path.exists(csv_path):
-                count = orchestrator.import_available_models_from_csv(csv_path)
-                if count:
-                    logger.info(f"Modelos disponibles importados desde CSV: {count}")
-        except Exception as _:
-            pass
-
-        logger.info("Orquestador AI inicializado correctamente")
-    except Exception as e:
-        logger.error(f"Error al inicializar el orquestador: {str(e)}")
+            for entry in os.listdir(full_path):
+                # Skip hidden files starting with .
+                if entry.startswith('.'):
+                    continue
+                
+                entry_path = os.path.join(full_path, entry)
+                
+                try:
+                    stat_info = os.stat(entry_path)
+                    is_dir = os.path.isdir(entry_path)
+                    
+                    files.append(FileItem(
+                        name=entry,
+                        type="directory" if is_dir else "file",
+                        size=stat_info.st_size if not is_dir else None,
+                        modified=stat_info.st_mtime
+                    ))
+                except (OSError, PermissionError):
+                    # Skip files we can't access
+                    continue
+        except PermissionError:
+            return FilesResponse(
+                files=[],
+                path=path,
+                error="Permission denied"
+            )
+        
+        return FilesResponse(files=files, path=path)
+    
+    except HTTPException:
         raise
+    except Exception as e:
+        logger.error(f"Error listing files: {str(e)}")
+        return FilesResponse(
+            files=[],
+            path=path,
+            error=str(e)
+        )
+
+
+@app.get("/tools")
+async def get_tools():
+    """Get available tools and commands."""
+    tools = {
+        "help": {
+            "description": "Muestra la lista de comandos disponibles",
+            "subcommands": {}
+        },
+        "clear": {
+            "description": "Limpia el historial de mensajes del chat actual",
+            "subcommands": {}
+        },
+        "models": {
+            "description": "Lista los modelos de IA disponibles",
+            "subcommands": {}
+        },
+        "switch": {
+            "description": "Cambia el modelo de IA activo",
+            "subcommands": {
+                "usage": "/switch <model_name>"
+            }
+        },
+        "files": {
+            "description": "Gestión de archivos y directorios",
+            "subcommands": {
+                "list": "Lista archivos en un directorio",
+                "read": "Lee el contenido de un archivo",
+                "write": "Escribe contenido en un archivo"
+            }
+        },
+        "analyze": {
+            "description": "Analiza un directorio o archivo",
+            "subcommands": {
+                "directory": "Analiza la estructura de un directorio",
+                "file": "Analiza el contenido de un archivo"
+            }
+        },
+        "github": {
+            "description": "Vincula un issue o PR de GitHub al ciclo actual",
+            "subcommands": {
+                "link": "Vincula un issue/PR: /github link <url>"
+            }
+        },
+        "export": {
+            "description": "Exporta la conversación actual",
+            "subcommands": {
+                "markdown": "Exporta como Markdown",
+                "json": "Exporta como JSON"
+            }
+        }
+    }
+    
+    return tools
 
 
 # ===================================
@@ -576,6 +738,12 @@ async def read_root():
     return HTMLResponse(
         "<html><body><h1>Error: No se encontró la interfaz</h1></body></html>"
     )
+
+
+@app.head("/")
+async def head_root():
+    """HEAD method support for health checks."""
+    return Response(status_code=200)
 
 
 if __name__ == "__main__":
